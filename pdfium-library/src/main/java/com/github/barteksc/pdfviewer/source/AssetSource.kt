@@ -13,28 +13,26 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.github.barteksc.pdfviewer.source;
+package com.github.barteksc.pdfviewer.source
 
-import java.io.File;
-import java.io.IOException;
+import android.content.Context
+import com.github.barteksc.pdfviewer.util.FileUtils
+import org.benjinus.pdfium.PdfiumSDK
+import java.io.IOException
 
-import android.content.Context;
-
-import com.github.barteksc.pdfviewer.util.FileUtils;
-import org.benjinus.pdfium.PdfiumSDK;
-
-public class AssetSource implements DocumentSource {
-
-    private final String assetName;
-
-    public AssetSource(String assetName) {
-        this.assetName = assetName;
-    }
-
-    @Override
-    public PdfiumSDK createDocument(Context context, String password) throws IOException {
-        File f = FileUtils.fileFromAsset(context, assetName);
-        ;
-        return new PdfiumSDK(f, password);
+class AssetSource(private val assetName: String): DocumentSource {
+    @Throws(IOException::class)
+    override fun createDocument(
+        context: Context,
+        password: String?
+    ): PdfiumSDK {
+        val f = FileUtils.fileFromAsset(
+            context,
+            assetName
+        )
+        return PdfiumSDK(
+            f,
+            password
+        )
     }
 }

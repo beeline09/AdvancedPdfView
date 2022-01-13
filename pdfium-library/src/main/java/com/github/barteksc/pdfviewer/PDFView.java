@@ -18,14 +18,16 @@ import android.graphics.PointF;
 import android.graphics.Rect;
 import android.graphics.RectF;
 import android.graphics.drawable.Drawable;
-import android.os.AsyncTask;
 import android.os.Build;
 import android.os.HandlerThread;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.widget.RelativeLayout;
 
+import androidx.annotation.ColorInt;
+import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import com.github.barteksc.pdfviewer.decoding.DecodingRunner;
 import com.github.barteksc.pdfviewer.exception.PageRenderingException;
 import com.github.barteksc.pdfviewer.link.DefaultLinkHandler;
 import com.github.barteksc.pdfviewer.link.LinkHandler;
@@ -53,10 +55,9 @@ import com.github.barteksc.pdfviewer.util.Util;
 import org.benjinus.pdfium.Bookmark;
 import org.benjinus.pdfium.Link;
 import org.benjinus.pdfium.Meta;
-import org.benjinus.pdfium.PdfiumSDK;
-import org.benjinus.pdfium.search.SearchData;
 import org.benjinus.pdfium.util.Size;
 import org.benjinus.pdfium.util.SizeF;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * It supports animations, zoom, cache, and swipe.
@@ -162,11 +163,6 @@ public class PDFView extends RelativeLayout {
     private State state = State.DEFAULT;
 
     /**
-     * Async task used during the loading phase to decode a PDF document
-     */
-    private DecodingAsyncTask decodingAsyncTask;
-
-    /**
      * The thread {@link #renderingHandler} will run on
      */
     private HandlerThread renderingHandlerThread;
@@ -210,6 +206,9 @@ public class PDFView extends RelativeLayout {
     private boolean nightMode = false;
 
     private String searchQuery = "";
+
+    @ColorInt
+    private Integer textHighlightColor = Color.WHITE;
 
     private boolean pageSnap = true;
 
@@ -289,6 +288,15 @@ public class PDFView extends RelativeLayout {
     @Nullable
     private ColorScheme mColorScheme = null;
 
+    public Integer getTextHighlightColor() {
+        return textHighlightColor;
+    }
+
+    public void setTextHighlightColor(Integer textHighlightColor) {
+        this.textHighlightColor = textHighlightColor;
+        loadPages();
+    }
+
     /**
      * Construct the initial view
      */
@@ -325,9 +333,18 @@ public class PDFView extends RelativeLayout {
         }
 
         recycled = false;
-        // Start decoding document
-        decodingAsyncTask = new DecodingAsyncTask(docSource, password, userPages, this);
-        decodingAsyncTask.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
+        DecodingRunner runner = new DecodingRunner(docSource, password, userPages, this);
+        runner.executeAsync(new DecodingRunner.Callback() {
+            @Override
+            public void onComplete(@Nullable PdfFile result) {
+                loadComplete(result);
+            }
+
+            @Override
+            public void onError(@Nullable Throwable t) {
+                loadError(t);
+            }
+        });
     }
 
     /**
@@ -426,6 +443,10 @@ public class PDFView extends RelativeLayout {
         return pdfFile.getPagesCount();
     }
 
+    public int getTotalPagesCount() {
+        return pdfFile.getTotalPagesCount();
+    }
+
     public void setSwipeEnabled(boolean enableSwipe) {
         this.enableSwipe = enableSwipe;
     }
@@ -469,9 +490,9 @@ public class PDFView extends RelativeLayout {
             renderingHandler.stop();
             renderingHandler.removeMessages(RenderingHandler.MSG_RENDER_TASK);
         }
-        if (decodingAsyncTask != null) {
-            decodingAsyncTask.cancel(true);
-        }
+        //        if (decodingAsyncTask != null) {
+        //            decodingAsyncTask.cancel(true);
+        //        }
 
         // Clear caches
         cacheManager.recycle();
@@ -801,6 +822,29 @@ public class PDFView extends RelativeLayout {
         redraw();
     }
 
+    public interface OnTextParseListener {
+        void onTextParseSuccess(int pageIndex, @NotNull String text);
+
+        void onTextParseError(int pageIndex);
+    }
+
+    private OnTextParseListener parseListener = null;
+
+    public void parseText(@NonNull List<Integer> pagesIndexes,
+            @NotNull OnTextParseListener listener) {
+
+        if (pdfFile == null || renderingHandler == null) {
+            return;
+        }
+        this.parseListener = listener;
+
+        // Cancel all current tasks
+        renderingHandler.removeMessages(RenderingHandler.MSG_PARSE_TEXT_TASK);
+
+        pagesLoader.parseText(pagesIndexes);
+        redraw();
+    }
+
     /**
      * Called when the PDF is loaded
      */
@@ -863,6 +907,18 @@ public class PDFView extends RelativeLayout {
             cacheManager.cachePart(part);
         }
         redraw();
+    }
+
+    public void onTextParsed(int pageIndex, @Nullable String text) {
+        if (parseListener != null) {
+            if (text == null) {
+                Log.e("PDFView", "Page " + (pageIndex + 1) + ". CharCount: NULL");
+                parseListener.onTextParseError(pageIndex);
+            } else {
+                Log.e("PDFView", "Page " + (pageIndex + 1) + ". CharCount: " + text.length());
+                parseListener.onTextParseSuccess(pageIndex, text);
+            }
+        }
     }
 
     public void moveTo(float offsetX, float offsetY) {
@@ -1141,34 +1197,20 @@ public class PDFView extends RelativeLayout {
         return pdfFile.getPageSize(pageIndex);
     }
 
-    public void overrideColorScheme(@Nullable ColorScheme colorScheme){
+    public void overrideColorScheme(@Nullable ColorScheme colorScheme) {
         mColorScheme = colorScheme;
         if (mColorScheme != null) {
-//            setBackgroundColor(Color.BLACK);
+            //            setBackgroundColor(Color.BLACK);
         } else {
-//            setBackgroundColor(Color.TRANSPARENT);
+            //            setBackgroundColor(Color.TRANSPARENT);
         }
         cacheManager.recycle();
         loadPages();
     }
 
-    public void parsePagesText(){
-        List<SearchData> data = pdfFile.search("Angular");
-        if (data.size()>0)
-        for (int i = 0; i < data.size(); i++){
-//                        String str = pdfFile.getPageText(i);
-//                        int length = -1;
-//                        if (str != null){
-//                            length = str.length();
-//                        }
-                        Log.e("PdfView", "Search data"+ data.get(i).toString());
-        }
+    public boolean isColorSchemeOverridden() {
+        return mColorScheme != null;
     }
-
-    public boolean isColorSchemeOverridden(){
-        return  mColorScheme != null;
-    }
-
 
     public int getCurrentPage() {
         return currentPage;
@@ -1436,7 +1478,7 @@ public class PDFView extends RelativeLayout {
 
         private OnPageErrorListener onPageErrorListener;
 
-        private LinkHandler linkHandler = new DefaultLinkHandler(PDFView.this);
+        private LinkHandler linkHandler = new DefaultLinkHandler(PDFView.this, "Select app for open link");
 
         private int defaultPage = 0;
 
@@ -1463,8 +1505,6 @@ public class PDFView extends RelativeLayout {
         private boolean pageSnap = false;
 
         private boolean nightMode = false;
-
-        private ColorScheme colorScheme =  null;
 
         private Configurator(DocumentSource documentSource) {
             this.documentSource = documentSource;
@@ -1606,12 +1646,17 @@ public class PDFView extends RelativeLayout {
         }
 
         public Configurator disableLongpress() {
-            PDFView.this.dragPinchManager.disableLongpress();
+            PDFView.this.dragPinchManager.disableLongPress();
             return this;
         }
 
-        public Configurator overrideColorScheme(ColorScheme colorScheme){
+        public Configurator overrideColorScheme(ColorScheme colorScheme) {
             PDFView.this.mColorScheme = colorScheme;
+            return this;
+        }
+
+        public Configurator textHighlightColor(@ColorInt int color) {
+            PDFView.this.textHighlightColor = color;
             return this;
         }
 

@@ -1,180 +1,173 @@
 /**
  * Copyright 2017 Bartosz Schiller
- * <p/>
+ *
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * <p/>
+ *
+ *
  * http://www.apache.org/licenses/LICENSE-2.0
- * <p/>
+ *
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.github.barteksc.pdfviewer.listener;
+package com.github.barteksc.pdfviewer.listener
 
-import android.view.MotionEvent;
+import android.view.MotionEvent
+import com.github.barteksc.pdfviewer.link.LinkHandler
+import com.github.barteksc.pdfviewer.model.LinkTapEvent
 
-import com.github.barteksc.pdfviewer.link.LinkHandler;
-import com.github.barteksc.pdfviewer.model.LinkTapEvent;
-
-public class Callbacks {
-
+class Callbacks {
     /**
      * Call back object to call when the PDF is loaded
      */
-    private OnLoadCompleteListener onLoadCompleteListener;
+    private var onLoadCompleteListener: OnLoadCompleteListener? = null
 
     /**
      * Call back object to call when document loading error occurs
      */
-    private OnErrorListener onErrorListener;
+    var onError: OnErrorListener? = null
 
     /**
      * Call back object to call when the page load error occurs
      */
-    private OnPageErrorListener onPageErrorListener;
+    private var onPageErrorListener: OnPageErrorListener? = null
 
     /**
      * Call back object to call when the document is initially rendered
      */
-    private OnRenderListener onRenderListener;
+    private var onRenderListener: OnRenderListener? = null
 
     /**
      * Call back object to call when the page has changed
      */
-    private OnPageChangeListener onPageChangeListener;
+    private var onPageChangeListener: OnPageChangeListener? = null
 
     /**
      * Call back object to call when the page is scrolled
      */
-    private OnPageScrollListener onPageScrollListener;
+    private var onPageScrollListener: OnPageScrollListener? = null
 
     /**
      * Call back object to call when the above layer is to drawn
      */
-    private OnDrawListener onDrawListener;
-
-    private OnDrawListener onDrawAllListener;
+    var onDraw: OnDrawListener? = null
+    var onDrawAll: OnDrawListener? = null
 
     /**
      * Call back object to call when the user does a tap gesture
      */
-    private OnTapListener onTapListener;
+    private var onTapListener: OnTapListener? = null
 
     /**
      * Call back object to call when the user does a long tap gesture
      */
-    private OnLongPressListener onLongPressListener;
+    private var onLongPressListener: OnLongPressListener? = null
 
     /**
      * Call back object to call when clicking link
      */
-    private LinkHandler linkHandler;
-
-    public void setOnLoadComplete(OnLoadCompleteListener onLoadCompleteListener) {
-        this.onLoadCompleteListener = onLoadCompleteListener;
+    private var linkHandler: LinkHandler? = null
+    fun setOnLoadComplete(onLoadCompleteListener: OnLoadCompleteListener?) {
+        this.onLoadCompleteListener = onLoadCompleteListener
     }
 
-    public void callOnLoadComplete(int pagesCount) {
+    fun callOnLoadComplete(pagesCount: Int) {
         if (onLoadCompleteListener != null) {
-            onLoadCompleteListener.loadComplete(pagesCount);
+            onLoadCompleteListener?.loadComplete(pagesCount)
         }
     }
 
-    public void setOnError(OnErrorListener onErrorListener) {
-        this.onErrorListener = onErrorListener;
+    fun setOnPageError(onPageErrorListener: OnPageErrorListener?) {
+        this.onPageErrorListener = onPageErrorListener
     }
 
-    public OnErrorListener getOnError() {
-        return onErrorListener;
-    }
-
-    public void setOnPageError(OnPageErrorListener onPageErrorListener) {
-        this.onPageErrorListener = onPageErrorListener;
-    }
-
-    public boolean callOnPageError(int page, Throwable error) {
+    fun callOnPageError(
+        page: Int,
+        error: Throwable?
+    ): Boolean {
         if (onPageErrorListener != null) {
-            onPageErrorListener.onPageError(page, error);
-            return true;
+            onPageErrorListener?.onPageError(
+                page,
+                error
+            )
+            return true
         }
-        return false;
+        return false
     }
 
-    public void setOnRender(OnRenderListener onRenderListener) {
-        this.onRenderListener = onRenderListener;
+    fun setOnRender(onRenderListener: OnRenderListener?) {
+        this.onRenderListener = onRenderListener
     }
 
-    public void callOnRender(int pagesCount) {
+    fun callOnRender(pagesCount: Int) {
         if (onRenderListener != null) {
-            onRenderListener.onInitiallyRendered(pagesCount);
+            onRenderListener?.onInitiallyRendered(pagesCount)
         }
     }
 
-    public void setOnPageChange(OnPageChangeListener onPageChangeListener) {
-        this.onPageChangeListener = onPageChangeListener;
+    fun setOnPageChange(onPageChangeListener: OnPageChangeListener?) {
+        this.onPageChangeListener = onPageChangeListener
     }
 
-    public void callOnPageChange(int page, int pagesCount) {
+    fun callOnPageChange(
+        page: Int,
+        pagesCount: Int
+    ) {
         if (onPageChangeListener != null) {
-            onPageChangeListener.onPageChanged(page, pagesCount);
+            onPageChangeListener?.onPageChanged(
+                page,
+                pagesCount
+            )
         }
     }
 
-    public void setOnPageScroll(OnPageScrollListener onPageScrollListener) {
-        this.onPageScrollListener = onPageScrollListener;
+    fun setOnPageScroll(onPageScrollListener: OnPageScrollListener?) {
+        this.onPageScrollListener = onPageScrollListener
     }
 
-    public void callOnPageScroll(int currentPage, float offset) {
+    fun callOnPageScroll(
+        currentPage: Int,
+        offset: Float
+    ) {
         if (onPageScrollListener != null) {
-            onPageScrollListener.onPageScrolled(currentPage, offset);
+            onPageScrollListener?.onPageScrolled(
+                currentPage,
+                offset
+            )
         }
     }
 
-    public void setOnDraw(OnDrawListener onDrawListener) {
-        this.onDrawListener = onDrawListener;
+    fun setOnTap(onTapListener: OnTapListener?) {
+        this.onTapListener = onTapListener
     }
 
-    public OnDrawListener getOnDraw() {
-        return onDrawListener;
+    fun callOnTap(event: MotionEvent?): Boolean {
+        return onTapListener?.onTap(event) == true
     }
 
-    public void setOnDrawAll(OnDrawListener onDrawAllListener) {
-        this.onDrawAllListener = onDrawAllListener;
+    fun setOnLongPress(onLongPressListener: OnLongPressListener?) {
+        this.onLongPressListener = onLongPressListener
     }
 
-    public OnDrawListener getOnDrawAll() {
-        return onDrawAllListener;
-    }
-
-    public void setOnTap(OnTapListener onTapListener) {
-        this.onTapListener = onTapListener;
-    }
-
-    public boolean callOnTap(MotionEvent event) {
-        return onTapListener != null && onTapListener.onTap(event);
-    }
-
-    public void setOnLongPress(OnLongPressListener onLongPressListener) {
-        this.onLongPressListener = onLongPressListener;
-    }
-
-    public void callOnLongPress(MotionEvent event) {
+    fun callOnLongPress(event: MotionEvent?) {
         if (onLongPressListener != null) {
-            onLongPressListener.onLongPress(event);
+            onLongPressListener?.onLongPress(event)
         }
     }
 
-    public void setLinkHandler(LinkHandler linkHandler) {
-        this.linkHandler = linkHandler;
+    fun setLinkHandler(linkHandler: LinkHandler?) {
+        this.linkHandler = linkHandler
     }
 
-    public void callLinkHandler(LinkTapEvent event) {
+    fun callLinkHandler(event: LinkTapEvent?) {
         if (linkHandler != null) {
-            linkHandler.handleLinkEvent(event);
+            linkHandler?.handleLinkEvent(event)
         }
     }
 }

@@ -15,26 +15,25 @@
  */
 package com.github.barteksc.sample;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import android.content.ActivityNotFoundException;
 import android.content.Intent;
 import android.content.pm.PackageManager;
-import android.database.Cursor;
 import android.graphics.Color;
 import android.net.Uri;
 import android.os.Bundle;
-import android.provider.OpenableColumns;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import androidx.core.app.ActivityCompat;
-import androidx.core.content.ContextCompat;
-import androidx.appcompat.app.AppCompatActivity;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.Toast;
 
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
 import com.github.barteksc.pdfviewer.PDFView;
 import com.github.barteksc.pdfviewer.listener.OnLoadCompleteListener;
 import com.github.barteksc.pdfviewer.listener.OnPageChangeListener;
@@ -53,9 +52,9 @@ public class PDFViewActivity extends AppCompatActivity
     private final static int REQUEST_CODE = 42;
     public static final int PERMISSION_CODE = 42042;
 
-    public static final String SAMPLE_FILE = "3941.pdf";
-//public static final String SAMPLE_FILE = "test.pdf";
-//    public static final String SAMPLE_FILE = "matt_power.pdf";
+    public static final String SAMPLE_FILE = "3945.pdf";
+    //public static final String SAMPLE_FILE = "test.pdf";
+    //    public static final String SAMPLE_FILE = "matt_power.pdf";
     public static final String READ_EXTERNAL_STORAGE = "android.permission.READ_EXTERNAL_STORAGE";
 
     PDFView pdfView;
@@ -75,10 +74,10 @@ public class PDFViewActivity extends AppCompatActivity
     @Override
     public boolean onOptionsItemSelected(@NonNull MenuItem item) {
         if (item.getItemId() == R.id.pickFile) {
-            if (pdfView.getSearchQuery().equalsIgnoreCase("angular")){
+            if (pdfView.getSearchQuery().equalsIgnoreCase("Visual Studio")){
                 pdfView.setSearchQuery("");
             } else {
-                pdfView.setSearchQuery("Angular");
+                pdfView.setSearchQuery("Visual Studio");
             }
 
             if (pdfView.isColorSchemeOverridden()){
@@ -93,6 +92,22 @@ public class PDFViewActivity extends AppCompatActivity
                         ) //BLACL
                 );
             }
+/*            int countPages = pdfView.getTotalPagesCount();
+            ArrayList<Integer> arr = new ArrayList<>();
+            for (int i = 0; i < countPages; i++) {
+                arr.add(i);
+            }
+            pdfView.parseText(arr, new PDFView.OnTextParseListener() {
+                @Override
+                public void onTextParseSuccess(int pageIndex, @NonNull String text) {
+
+                }
+
+                @Override
+                public void onTextParseError(int pageIndex) {
+
+                }
+            });*/
         }
         return super.onOptionsItemSelected(item);
     }
@@ -103,30 +118,6 @@ public class PDFViewActivity extends AppCompatActivity
         setContentView(R.layout.activity_main);
         pdfView = findViewById(R.id.pdfView);
         afterViews();
-    }
-
-    void pickFile() {
-        int permissionCheck = ContextCompat.checkSelfPermission(this, READ_EXTERNAL_STORAGE);
-
-        if (permissionCheck != PackageManager.PERMISSION_GRANTED) {
-            ActivityCompat.requestPermissions(this, new String[] {READ_EXTERNAL_STORAGE},
-                    PERMISSION_CODE);
-
-            return;
-        }
-
-        launchPicker();
-    }
-
-    void launchPicker() {
-        Intent intent = new Intent(Intent.ACTION_GET_CONTENT);
-        intent.setType("application/pdf");
-        try {
-            startActivityForResult(intent, REQUEST_CODE);
-        } catch (ActivityNotFoundException e) {
-            //alert user that file manager not working
-            Toast.makeText(this, R.string.toast_pick_file_error, Toast.LENGTH_SHORT).show();
-        }
     }
 
     void afterViews() {
@@ -143,8 +134,12 @@ public class PDFViewActivity extends AppCompatActivity
         pdfView.fromAsset(SAMPLE_FILE).defaultPage(pageNumber).onPageChange(this)
                 .enableAnnotationRendering(true).onLoad(this)
                 .scrollHandle(new DefaultScrollHandle(this)).spacing(10) // in dp
-                .defaultPage(25)
-//                .nightMode(true)
+                .defaultPage(45)
+                .textHighlightColor(Color.RED)
+//                .scrollHandle(null)
+                .onPageChange(
+                        (page, pageCount) -> Log.e(TAG, "Current page is "+page+" of "+pageCount+""))
+                //                .nightMode(true)
                 .onPageError(this).pageFitPolicy(FitPolicy.BOTH).load();
 
         pdfView.setSearchQuery("angular");
@@ -168,36 +163,16 @@ public class PDFViewActivity extends AppCompatActivity
         Log.e(TAG, "creationDate = " + meta.getCreationDate());
         Log.e(TAG, "modDate = " + meta.getModDate());
 
-//        printBookmarksTree(pdfView.getTableOfContents(), "-");
-        pdfView.parsePagesText();
-
+        printBookmarksTree(pdfView.getTableOfContents(), "-");
     }
 
-    public void printBookmarksTree(List<Bookmark> tree, String sep) {
+    public void printBookmarksTree(@NonNull List<Bookmark> tree, String sep) {
         for (Bookmark b : tree) {
 
             Log.e(TAG, String.format("%s %s, p %d", sep, b.getTitle(), b.getPageIdx()));
 
             if (b.hasChildren()) {
                 printBookmarksTree(b.getChildren(), sep + "-");
-            }
-        }
-    }
-
-    /**
-     * Listener for response to user permission request
-     *
-     * @param requestCode  Check that permission request code matches
-     * @param permissions  Permissions that requested
-     * @param grantResults Whether permissions granted
-     */
-    @Override
-    public void onRequestPermissionsResult(int requestCode, @NonNull String permissions[],
-            @NonNull int[] grantResults) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-        if (requestCode == PERMISSION_CODE) {
-            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                launchPicker();
             }
         }
     }

@@ -1,153 +1,183 @@
 /**
  * Copyright 2017 Bartosz Schiller
- * <p/>
+ *
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * <p/>
+ *
+ *
  * http://www.apache.org/licenses/LICENSE-2.0
- * <p/>
+ *
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.github.barteksc.pdfviewer;
+package com.github.barteksc.pdfviewer
 
-import java.util.ArrayList;
-import java.util.List;
+import android.graphics.Bitmap
+import android.graphics.Color
+import android.graphics.Rect
+import android.graphics.RectF
+import android.util.SparseBooleanArray
+import com.github.barteksc.pdfviewer.exception.PageRenderingException
+import com.github.barteksc.pdfviewer.util.ColorScheme
+import com.github.barteksc.pdfviewer.util.FitPolicy
+import com.github.barteksc.pdfviewer.util.PageSizeCalculator
+import org.benjinus.pdfium.Bookmark
+import org.benjinus.pdfium.Link
+import org.benjinus.pdfium.Meta
+import org.benjinus.pdfium.PdfiumSDK
+import org.benjinus.pdfium.search.TextSearchContext
+import org.benjinus.pdfium.util.Size
+import org.benjinus.pdfium.util.SizeF
+import java.util.ArrayList
+import kotlin.math.max
 
-import android.graphics.Bitmap;
-import android.graphics.Rect;
-import android.graphics.RectF;
-import android.util.Log;
-import android.util.SparseBooleanArray;
-
-import androidx.annotation.Nullable;
-import com.github.barteksc.pdfviewer.exception.PageRenderingException;
-import com.github.barteksc.pdfviewer.util.ColorScheme;
-import com.github.barteksc.pdfviewer.util.FitPolicy;
-import com.github.barteksc.pdfviewer.util.PageSizeCalculator;
-import org.benjinus.pdfium.Bookmark;
-import org.benjinus.pdfium.Link;
-import org.benjinus.pdfium.Meta;
-import org.benjinus.pdfium.PdfiumSDK;
-import org.benjinus.pdfium.search.SearchData;
-import org.benjinus.pdfium.search.TextSearchContext;
-import org.benjinus.pdfium.util.Size;
-import org.benjinus.pdfium.util.SizeF;
-
-class PdfFile {
-
-    private static final Object lock = new Object();
-    //    private PdfDocument pdfDocument;
-    private PdfiumSDK pdfiumCore;
-    private int pagesCount = 0;
-    /**
-     * Original page sizes
-     */
-    private List<Size> originalPageSizes = new ArrayList<>();
-    /**
-     * Scaled page sizes
-     */
-    private List<SizeF> pageSizes = new ArrayList<>();
-    /**
-     * Opened pages with indicator whether opening was successful
-     */
-    private SparseBooleanArray openedPages = new SparseBooleanArray();
-    /**
-     * Page with maximum width
-     */
-    private Size originalMaxWidthPageSize = new Size(0, 0);
-    /**
-     * Page with maximum height
-     */
-    private Size originalMaxHeightPageSize = new Size(0, 0);
-    /**
-     * Scaled page with maximum height
-     */
-    private SizeF maxHeightPageSize = new SizeF(0, 0);
-    /**
-     * Scaled page with maximum width
-     */
-    private SizeF maxWidthPageSize = new SizeF(0, 0);
-    /**
-     * True if scrolling is vertical, else it's horizontal
-     */
-    private boolean isVertical;
-    /**
-     * Fixed spacing between pages in pixels
-     */
-    private int spacingPx;
-    /**
-     * Calculate spacing automatically so each page fits on it's own in the center of the view
-     */
-    private boolean autoSpacing;
-    /**
-     * Calculated offsets for pages
-     */
-    private List<Float> pageOffsets = new ArrayList<>();
-    /**
-     * Calculated auto spacing for pages
-     */
-    private List<Float> pageSpacing = new ArrayList<>();
-    /**
-     * Calculated document length (width or height, depending on swipe mode)
-     */
-    private float documentLength = 0;
-    private final FitPolicy pageFitPolicy;
-    /**
-     * True if every page should fit separately according to the FitPolicy,
-     * else the largest page fits and other pages scale relatively
-     */
-    private final boolean fitEachPage;
+class PdfFile(
+    private val pdfiumCore: PdfiumSDK,
+    private val pageFitPolicy: FitPolicy,
+    viewSize: Size,
     /**
      * The pages the user want to display in order
      * (ex: 0, 2, 2, 8, 8, 1, 1, 1)
      */
-    private int[] originalUserPages;
+    private var originalUserPages: IntArray = intArrayOf(),
+    /**
+     * True if scrolling is vertical, else it's horizontal
+     */
+    private val isVertical: Boolean,
+    /**
+     * Fixed spacing between pages in pixels
+     */
+    private val spacingPx: Int,
+    /**
+     * Calculate spacing automatically so each page fits on it's own in the center of the view
+     */
+    private val autoSpacing: Boolean,
+    /**
+     * True if every page should fit separately according to the FitPolicy,
+     * else the largest page fits and other pages scale relatively
+     */
+    private val fitEachPage: Boolean
+) {
+    var pagesCount = 0
+        private set
 
-    PdfFile(PdfiumSDK pdfiumCore, FitPolicy pageFitPolicy, Size viewSize, int[] originalUserPages,
-            boolean isVertical, int spacing, boolean autoSpacing, boolean fitEachPage) {
-        this.pdfiumCore = pdfiumCore;
-        //        this.pdfDocument = pdfDocument;
-        this.pageFitPolicy = pageFitPolicy;
-        this.originalUserPages = originalUserPages;
-        this.isVertical = isVertical;
-        this.spacingPx = spacing;
-        this.autoSpacing = autoSpacing;
-        this.fitEachPage = fitEachPage;
-        setup(viewSize);
-    }
+    /**
+     * Original page sizes
+     */
+    private val originalPageSizes: MutableList<Size> = ArrayList()
 
-    private void setup(Size viewSize) {
-        if (originalUserPages != null) {
-            pagesCount = originalUserPages.length;
-        } else {
-            pagesCount = pdfiumCore.getPageCount();
-        }
+    /**
+     * Scaled page sizes
+     */
+    private val pageSizes: MutableList<SizeF> = ArrayList()
 
-        for (int i = 0; i < pagesCount; i++) {
-            Size pageSize = pdfiumCore.getPageSize(i);
-            if (pageSize.getWidth() > originalMaxWidthPageSize.getWidth()) {
-                originalMaxWidthPageSize = pageSize;
+    /**
+     * Opened pages with indicator whether opening was successful
+     */
+    private val openedPages = SparseBooleanArray()
+
+    /**
+     * Page with maximum width
+     */
+    private var originalMaxWidthPageSize = Size(
+        0,
+        0
+    )
+
+    /**
+     * Page with maximum height
+     */
+    private var originalMaxHeightPageSize = Size(
+        0,
+        0
+    )
+
+    /**
+     * Scaled page with maximum height
+     */
+    private var maxHeightPageSize: SizeF? = SizeF(
+        0f,
+        0f
+    )
+
+    /**
+     * Scaled page with maximum width
+     */
+    private var maxWidthPageSize: SizeF? = SizeF(
+        0f,
+        0f
+    )
+
+    /**
+     * Calculated offsets for pages
+     */
+    private val pageOffsets: MutableList<Float> = ArrayList()
+
+    /**
+     * Calculated auto spacing for pages
+     */
+    private val pageSpacing: MutableList<Float> = ArrayList()
+
+    /**
+     * Calculated document length (width or height, depending on swipe mode)
+     */
+    private var documentLength = 0f
+    var textHighlightColor = Color.WHITE
+    private fun setup(viewSize: Size) {
+        pagesCount = if (originalUserPages.isNotEmpty()) originalUserPages.size else pdfiumCore.totalPagesCount
+        for (i in 0 until pagesCount) {
+            val pageSize = pdfiumCore.getPageSize(i)
+            if (pageSize.width > originalMaxWidthPageSize.width) {
+                originalMaxWidthPageSize = pageSize
             }
-            if (pageSize.getHeight() > originalMaxHeightPageSize.getHeight()) {
-                originalMaxHeightPageSize = pageSize;
+            if (pageSize.height > originalMaxHeightPageSize.height) {
+                originalMaxHeightPageSize = pageSize
             }
-            originalPageSizes.add(pageSize);
+            originalPageSizes.add(pageSize)
         }
-
-        recalculatePageSizes(viewSize);
+        recalculatePageSizes(viewSize)
     }
 
-    public List<SearchData> search(String searchQuery){
-        return pdfiumCore.search(searchQuery, true);
+    fun getPageRotation(pageIndex: Int): Int {
+        return pdfiumCore.getPageRotation(pageIndex)
     }
 
-    public Size getPageSizeNative(int index) {
-        return pdfiumCore.getPageSize(index);
+    fun countCharactersOnPage(pageNumber: Int): Int {
+        return pdfiumCore.countCharactersOnPage(pageNumber)
+    }
+
+    fun extractCharacters(
+        pageIndex: Int,
+        startIndex: Int,
+        length: Int
+    ): String? {
+        return pdfiumCore.extractCharacters(
+            pageIndex,
+            startIndex,
+            length
+        )
+    }
+
+    fun getTotalPagesCount(): Int {
+        return pdfiumCore.totalPagesCount
+    }
+
+    fun getPageSizeNative(index: Int): Size {
+        return pdfiumCore.getPageSize(index)
+    }
+
+    fun getMetaData(): Meta {
+        return pdfiumCore.metaData
+    }
+
+    fun getBookmarks(): List<Bookmark?> {
+        return pdfiumCore.bookmarks
     }
 
     /**
@@ -155,39 +185,46 @@ class PdfFile {
      *
      * @param viewSize new size of changed view
      */
-    public void recalculatePageSizes(Size viewSize) {
-        pageSizes.clear();
-        PageSizeCalculator calculator =
-                new PageSizeCalculator(pageFitPolicy, originalMaxWidthPageSize,
-                        originalMaxHeightPageSize, viewSize, fitEachPage);
-        maxWidthPageSize = calculator.getOptimalMaxWidthPageSize();
-        maxHeightPageSize = calculator.getOptimalMaxHeightPageSize();
-
-        for (Size size : originalPageSizes) {
-            pageSizes.add(calculator.calculate(size));
+    fun recalculatePageSizes(viewSize: Size) {
+        pageSizes.clear()
+        val calculator = PageSizeCalculator(
+            pageFitPolicy,
+            originalMaxWidthPageSize,
+            originalMaxHeightPageSize,
+            viewSize,
+            fitEachPage
+        )
+        maxWidthPageSize = calculator.optimalMaxWidthPageSize
+        maxHeightPageSize = calculator.optimalMaxHeightPageSize
+        for (size in originalPageSizes) {
+            pageSizes.add(calculator.calculate(size))
         }
         if (autoSpacing) {
-            prepareAutoSpacing(viewSize);
+            prepareAutoSpacing(viewSize)
         }
-        prepareDocLen();
-        preparePagesOffset();
+        prepareDocLen()
+        preparePagesOffset()
     }
 
-    public int getPagesCount() {
-        return pagesCount;
+    fun getPageSize(pageIndex: Int): SizeF {
+        val docPage = documentPage(pageIndex)
+        return if (docPage < 0) {
+            SizeF(
+                0f,
+                0f
+            )
+        } else pageSizes[pageIndex]
     }
 
-    public SizeF getPageSize(int pageIndex) {
-        int docPage = documentPage(pageIndex);
-        if (docPage < 0) {
-            return new SizeF(0, 0);
-        }
-        return pageSizes.get(pageIndex);
-    }
-
-    public SizeF getScaledPageSize(int pageIndex, float zoom) {
-        SizeF size = getPageSize(pageIndex);
-        return new SizeF(size.getWidth() * zoom, size.getHeight() * zoom);
+    fun getScaledPageSize(
+        pageIndex: Int,
+        zoom: Float
+    ): SizeF {
+        val size = getPageSize(pageIndex)
+        return SizeF(
+            size.width * zoom,
+            size.height * zoom
+        )
     }
 
     /**
@@ -195,187 +232,231 @@ class PdfFile {
      *
      * @return size of page
      */
-    public SizeF getMaxPageSize() {
-        return isVertical ? maxWidthPageSize : maxHeightPageSize;
-    }
+    private val maxPageSize: SizeF?
+        get() = if (isVertical) maxWidthPageSize else maxHeightPageSize
+    val maxPageWidth: Float
+        get() = maxPageSize?.width?:0f
+    val maxPageHeight: Float
+        get() = maxPageSize?.height?:0f
 
-    public float getMaxPageWidth() {
-        return getMaxPageSize().getWidth();
-    }
-
-    public float getMaxPageHeight() {
-        return getMaxPageSize().getHeight();
-    }
-
-    private void prepareAutoSpacing(Size viewSize) {
-        pageSpacing.clear();
-        for (int i = 0; i < getPagesCount(); i++) {
-            SizeF pageSize = pageSizes.get(i);
-            float spacing = Math.max(0, isVertical ? viewSize.getHeight() - pageSize.getHeight() :
-                    viewSize.getWidth() - pageSize.getWidth());
-            if (i < getPagesCount() - 1) {
-                spacing += spacingPx;
+    private fun prepareAutoSpacing(viewSize: Size) {
+        pageSpacing.clear()
+        for (i in 0 until pagesCount) {
+            val pageSize = pageSizes[i]
+            var spacing = max(
+                0f,
+                if (isVertical) viewSize.height - pageSize.height else viewSize.width - pageSize.width
+            )
+            if (i < pagesCount - 1) {
+                spacing += spacingPx.toFloat()
             }
-            pageSpacing.add(spacing);
+            pageSpacing.add(spacing)
         }
     }
 
-    private void prepareDocLen() {
-        float length = 0;
-        for (int i = 0; i < getPagesCount(); i++) {
-            SizeF pageSize = pageSizes.get(i);
-            length += isVertical ? pageSize.getHeight() : pageSize.getWidth();
+    private fun prepareDocLen() {
+        var length = 0f
+        for (i in 0 until pagesCount) {
+            val pageSize = pageSizes[i]
+            length += if (isVertical) pageSize.height else pageSize.width
             if (autoSpacing) {
-                length += pageSpacing.get(i);
-            } else if (i < getPagesCount() - 1) {
-                length += spacingPx;
+                length += pageSpacing[i]
+            } else if (i < pagesCount - 1) {
+                length += spacingPx.toFloat()
             }
         }
-        documentLength = length;
+        documentLength = length
     }
 
-    private void preparePagesOffset() {
-        pageOffsets.clear();
-        float offset = 0;
-        for (int i = 0; i < getPagesCount(); i++) {
-            SizeF pageSize = pageSizes.get(i);
-            float size = isVertical ? pageSize.getHeight() : pageSize.getWidth();
+    private fun preparePagesOffset() {
+        pageOffsets.clear()
+        var offset = 0f
+        for (i in 0 until pagesCount) {
+            val pageSize = pageSizes[i]
+            val size = if (isVertical) pageSize.height else pageSize.width
             if (autoSpacing) {
-                offset += pageSpacing.get(i) / 2f;
+                offset += pageSpacing[i] / 2f
                 if (i == 0) {
-                    offset -= spacingPx / 2f;
-                } else if (i == getPagesCount() - 1) {
-                    offset += spacingPx / 2f;
+                    offset -= spacingPx / 2f
+                } else if (i == pagesCount - 1) {
+                    offset += spacingPx / 2f
                 }
-                pageOffsets.add(offset);
-                offset += size + pageSpacing.get(i) / 2f;
+                pageOffsets.add(offset)
+                offset += size + pageSpacing[i] / 2f
             } else {
-                pageOffsets.add(offset);
-                offset += size + spacingPx;
+                pageOffsets.add(offset)
+                offset += size + spacingPx
             }
         }
     }
 
-    public float getDocLen(float zoom) {
-        return documentLength * zoom;
+    fun getDocLen(zoom: Float): Float {
+        return documentLength * zoom
     }
 
     /**
      * Get the page's height if swiping vertical, or width if swiping horizontal.
      */
-    public float getPageLength(int pageIndex, float zoom) {
-        SizeF size = getPageSize(pageIndex);
-        return (isVertical ? size.getHeight() : size.getWidth()) * zoom;
+    fun getPageLength(
+        pageIndex: Int,
+        zoom: Float
+    ): Float {
+        val size = getPageSize(pageIndex)
+        return (if (isVertical) size.height else size.width) * zoom
     }
 
-    public float getPageSpacing(int pageIndex, float zoom) {
-        float spacing = autoSpacing ? pageSpacing.get(pageIndex) : spacingPx;
-        return spacing * zoom;
+    fun getPageSpacing(
+        pageIndex: Int,
+        zoom: Float
+    ): Float {
+        val spacing = if (autoSpacing) pageSpacing[pageIndex] else spacingPx.toFloat()
+        return spacing * zoom
     }
 
     /**
      * Get primary page offset, that is Y for vertical scroll and X for horizontal scroll
      */
-    public float getPageOffset(int pageIndex, float zoom) {
-        int docPage = documentPage(pageIndex);
-        if (docPage < 0) {
-            return 0;
-        }
-        return pageOffsets.get(pageIndex) * zoom;
+    fun getPageOffset(
+        pageIndex: Int,
+        zoom: Float
+    ): Float {
+        val docPage = documentPage(pageIndex)
+        return if (docPage < 0) {
+            0f
+        } else pageOffsets[pageIndex] * zoom
     }
 
     /**
      * Get secondary page offset, that is X for vertical scroll and Y for horizontal scroll
      */
-    public float getSecondaryPageOffset(int pageIndex, float zoom) {
-        SizeF pageSize = getPageSize(pageIndex);
-        if (isVertical) {
-            float maxWidth = getMaxPageWidth();
-            return zoom * (maxWidth - pageSize.getWidth()) / 2; //x
+    fun getSecondaryPageOffset(
+        pageIndex: Int,
+        zoom: Float
+    ): Float {
+        val pageSize = getPageSize(pageIndex)
+        return if (isVertical) {
+            val maxWidth = maxPageWidth
+            zoom * (maxWidth - pageSize.width) / 2 //x
         } else {
-            float maxHeight = getMaxPageHeight();
-            return zoom * (maxHeight - pageSize.getHeight()) / 2; //y
+            val maxHeight = maxPageHeight
+            zoom * (maxHeight - pageSize.height) / 2 //y
         }
     }
 
-    public int getPageAtOffset(float offset, float zoom) {
-        int currentPage = 0;
-        for (int i = 0; i < getPagesCount(); i++) {
-            float off = pageOffsets.get(i) * zoom - getPageSpacing(i, zoom) / 2f;
+    fun getPageAtOffset(
+        offset: Float,
+        zoom: Float
+    ): Int {
+        var currentPage = 0
+        for (i in 0 until pagesCount) {
+            val off = pageOffsets[i] * zoom - getPageSpacing(
+                i,
+                zoom
+            ) / 2f
             if (off >= offset) {
-                break;
+                break
             }
-            currentPage++;
+            currentPage++
         }
-        return --currentPage >= 0 ? currentPage : 0;
+        return if (--currentPage >= 0) currentPage else 0
     }
 
-    public boolean openPage(int pageIndex) throws PageRenderingException {
-        int docPage = documentPage(pageIndex);
+    @Throws(PageRenderingException::class)
+    fun openPage(pageIndex: Int): Boolean {
+        val docPage = documentPage(pageIndex)
         if (docPage < 0) {
-            return false;
+            return false
         }
-
-        synchronized (lock) {
-            if (openedPages.indexOfKey(docPage) < 0) {
+        synchronized(lock) {
+            return if (openedPages.indexOfKey(docPage) < 0) {
                 try {
-                    pdfiumCore.openPage(docPage);
-                    openedPages.put(docPage, true);
-                    return true;
-                } catch (Exception e) {
-                    openedPages.put(docPage, false);
-                    throw new PageRenderingException(pageIndex, e);
+                    pdfiumCore.openPage(docPage)
+                    openedPages.put(
+                        docPage,
+                        true
+                    )
+                    true
+                } catch (e: Exception) {
+                    openedPages.put(
+                        docPage,
+                        false
+                    )
+                    throw PageRenderingException(
+                        pageIndex,
+                        e
+                    )
                 }
-            }
-            return false;
+            } else false
         }
     }
 
-    public boolean pageHasError(int pageIndex) {
-        int docPage = documentPage(pageIndex);
-        return !openedPages.get(docPage, false);
+    fun pageHasError(pageIndex: Int): Boolean {
+        val docPage = documentPage(pageIndex)
+        return !openedPages[docPage, false]
     }
 
-    public void renderPageBitmap(Bitmap bitmap, int pageIndex, Rect bounds,
-            boolean annotationRendering, @Nullable ColorScheme colorScheme) {
-        int docPage = documentPage(pageIndex);
-        pdfiumCore.renderPageBitmap(bitmap, docPage, bounds.left, bounds.top, bounds.width(),
-                bounds.height(), annotationRendering, colorScheme);
+    fun renderPageBitmap(
+        bitmap: Bitmap,
+        pageIndex: Int,
+        bounds: Rect,
+        annotationRendering: Boolean,
+        colorScheme: ColorScheme?
+    ) {
+        val docPage = documentPage(pageIndex)
+        pdfiumCore.renderPageBitmap(
+            bitmap,
+            docPage,
+            bounds.left,
+            bounds.top,
+            bounds.width(),
+            bounds.height(),
+            annotationRendering,
+            colorScheme
+        )
     }
 
-    public TextSearchContext newPageSearch(
-            int pageIndex,
-            String query,
-            boolean matchCase,
-            boolean matchWholeWord
-    ){
-        return pdfiumCore.newPageSearch(pageIndex, query, matchCase, matchWholeWord);
+    fun newPageSearch(
+        pageIndex: Int,
+        query: String,
+        matchCase: Boolean,
+        matchWholeWord: Boolean
+    ): TextSearchContext {
+        return pdfiumCore.newPageSearch(
+            pageIndex,
+            query,
+            matchCase,
+            matchWholeWord
+        )
     }
 
-    public Meta getMetaData() {
-        return pdfiumCore.getDocumentMeta();
+    fun getPageLinks(pageIndex: Int): List<Link> {
+        val docPage = documentPage(pageIndex)
+        return pdfiumCore.getPageLinks(docPage)
     }
 
-    public List<Bookmark> getBookmarks() {
-        return pdfiumCore.getTableOfContents();
+    fun mapRectToDevice(
+        pageIndex: Int,
+        startX: Int,
+        startY: Int,
+        sizeX: Int,
+        sizeY: Int,
+        rect: RectF
+    ): RectF? {
+        val docPage = documentPage(pageIndex)
+        return pdfiumCore.mapPageCoordinateToDevice(
+            docPage,
+            startX,
+            startY,
+            sizeX,
+            sizeY,
+            0,
+            rect
+        )
     }
 
-    public List<Link> getPageLinks(int pageIndex) {
-        int docPage = documentPage(pageIndex);
-        return pdfiumCore.getPageLinks(docPage);
-    }
-
-    public RectF mapRectToDevice(int pageIndex, int startX, int startY, int sizeX, int sizeY,
-            RectF rect) {
-        int docPage = documentPage(pageIndex);
-        return pdfiumCore.mapPageCoordinateToDevice(docPage, startX, startY, sizeX, sizeY, 0, rect);
-    }
-
-    public void dispose() {
-        if (pdfiumCore != null) {
-            pdfiumCore.closeDocument();
-        }
-        originalUserPages = null;
+    fun dispose() {
+        pdfiumCore.closeDocument()
+        originalUserPages = intArrayOf()
     }
 
     /**
@@ -386,36 +467,42 @@ class PdfFile {
      * @param userPage A page number.
      * @return A restricted valid page number (example : -2 => 0)
      */
-    public int determineValidPageNumberFrom(int userPage) {
+    fun determineValidPageNumberFrom(userPage: Int): Int {
         if (userPage <= 0) {
-            return 0;
+            return 0
         }
-        if (originalUserPages != null) {
-            if (userPage >= originalUserPages.length) {
-                return originalUserPages.length - 1;
+        if (originalUserPages.isNotEmpty()) {
+            if (userPage >= originalUserPages.size) {
+                return originalUserPages.size
             }
         } else {
-            if (userPage >= getPagesCount()) {
-                return getPagesCount() - 1;
+            if (userPage >= pagesCount) {
+                return pagesCount - 1
             }
         }
-        return userPage;
+        return userPage
     }
 
-    public int documentPage(int userPage) {
-        int documentPage = userPage;
-        if (originalUserPages != null) {
-            if (userPage < 0 || userPage >= originalUserPages.length) {
-                return -1;
+    fun documentPage(userPage: Int): Int {
+        var documentPage = userPage
+        if (originalUserPages.isNotEmpty()) {
+            documentPage = if (userPage < 0 || userPage >= originalUserPages.size) {
+                return -1
             } else {
-                documentPage = originalUserPages[userPage];
+                originalUserPages[userPage]
             }
         }
+        return if (documentPage < 0 || userPage >= pagesCount) {
+            -1
+        } else documentPage
+    }
 
-        if (documentPage < 0 || userPage >= getPagesCount()) {
-            return -1;
-        }
+    companion object {
+        private val lock = Any()
+    }
 
-        return documentPage;
+    init {
+        //        this.pdfDocument = pdfDocument;
+        setup(viewSize)
     }
 }

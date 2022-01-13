@@ -13,28 +13,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.github.barteksc.pdfviewer.source;
+package com.github.barteksc.pdfviewer.source
 
-import java.io.File;
-import java.io.IOException;
+import android.content.Context
+import kotlin.Throws
+import org.benjinus.pdfium.PdfiumSDK
+import java.io.File
+import java.io.IOException
 
-import android.content.Context;
-import android.os.ParcelFileDescriptor;
-
-import org.benjinus.pdfium.PdfiumSDK;
-
-public class FileSource implements DocumentSource {
-
-    private File file;
-
-    public FileSource(File file) {
-        this.file = file;
-    }
-
-    @Override
-    public PdfiumSDK createDocument(Context context, String password) throws IOException {
-        ParcelFileDescriptor pfd =
-                ParcelFileDescriptor.open(file, ParcelFileDescriptor.MODE_READ_ONLY);
-        return new PdfiumSDK(file, password);
+class FileSource(private val file: File): DocumentSource {
+    @Throws(IOException::class)
+    override fun createDocument(
+        context: Context,
+        password: String?
+    ): PdfiumSDK {
+        return PdfiumSDK(
+            file,
+            password
+        )
     }
 }

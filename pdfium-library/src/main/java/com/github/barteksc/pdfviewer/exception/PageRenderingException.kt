@@ -1,14 +1,8 @@
-package com.github.barteksc.pdfviewer.exception;
+package com.github.barteksc.pdfviewer.exception
 
-public class PageRenderingException extends Exception {
-    private final int page;
+import java.lang.Exception
 
-    public PageRenderingException(int page, Throwable cause) {
-        super(cause);
-        this.page = page;
-    }
-
-    public int getPage() {
-        return page;
-    }
-}
+class PageRenderingException(
+    val page: Int,
+    cause: Throwable?
+): Exception(cause)

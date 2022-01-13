@@ -13,15 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.github.barteksc.pdfviewer.source;
+package com.github.barteksc.pdfviewer.source
 
-import android.content.Context;
-import android.graphics.pdf.PdfDocument;
+import android.content.Context
+import kotlin.Throws
+import org.benjinus.pdfium.PdfiumSDK
+import java.io.IOException
 
-import org.benjinus.pdfium.PdfiumSDK;
-
-import java.io.IOException;
-
-public interface DocumentSource {
-    PdfiumSDK createDocument(Context context, String password) throws IOException;
+interface DocumentSource {
+    @Throws(IOException::class)
+    fun createDocument(
+        context: Context,
+        password: String?
+    ): PdfiumSDK
 }
