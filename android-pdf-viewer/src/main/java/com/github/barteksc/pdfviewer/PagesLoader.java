@@ -20,7 +20,7 @@ import android.graphics.RectF;
 import com.github.barteksc.pdfviewer.util.Constants;
 import com.github.barteksc.pdfviewer.util.MathUtils;
 import com.github.barteksc.pdfviewer.util.Util;
-import com.shockwave.pdfium.util.SizeF;
+import org.benjinus.pdfium.util.SizeF;
 
 import java.util.LinkedList;
 import java.util.List;

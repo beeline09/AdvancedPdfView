@@ -18,9 +18,8 @@ package com.github.barteksc.pdfviewer;
 import android.os.AsyncTask;
 
 import com.github.barteksc.pdfviewer.source.DocumentSource;
-import com.shockwave.pdfium.PdfDocument;
-import com.shockwave.pdfium.PdfiumCore;
-import com.shockwave.pdfium.util.Size;
+import org.benjinus.pdfium.PdfiumSDK;
+import org.benjinus.pdfium.util.Size;
 
 import java.lang.ref.WeakReference;
 
@@ -30,19 +29,19 @@ class DecodingAsyncTask extends AsyncTask<Void, Void, Throwable> {
 
     private WeakReference<PDFView> pdfViewReference;
 
-    private PdfiumCore pdfiumCore;
+    private PdfiumSDK mPdfiumSDK;
     private String password;
     private DocumentSource docSource;
     private int[] userPages;
     private PdfFile pdfFile;
 
-    DecodingAsyncTask(DocumentSource docSource, String password, int[] userPages, PDFView pdfView, PdfiumCore pdfiumCore) {
+    DecodingAsyncTask(DocumentSource docSource, String password, int[] userPages, PDFView pdfView, PdfiumSDK mPdfiumSDK) {
         this.docSource = docSource;
         this.userPages = userPages;
         this.cancelled = false;
         this.pdfViewReference = new WeakReference<>(pdfView);
         this.password = password;
-        this.pdfiumCore = pdfiumCore;
+        this.mPdfiumSDK = mPdfiumSDK;
     }
 
     @Override
@@ -50,8 +49,8 @@ class DecodingAsyncTask extends AsyncTask<Void, Void, Throwable> {
         try {
             PDFView pdfView = pdfViewReference.get();
             if (pdfView != null) {
-                PdfDocument pdfDocument = docSource.createDocument(pdfView.getContext(), pdfiumCore, password);
-                pdfFile = new PdfFile(pdfiumCore, pdfDocument, pdfView.getPageFitPolicy(), getViewSize(pdfView),
+                mPdfiumSDK = docSource.createDocument(pdfView.getContext(), password);
+                pdfFile = new PdfFile(mPdfiumSDK, pdfView.getPageFitPolicy(), getViewSize(pdfView),
                         userPages, pdfView.isSwipeVertical(), pdfView.getSpacingPx(), pdfView.isAutoSpacingEnabled(),
                         pdfView.isFitEachPage());
                 return null;

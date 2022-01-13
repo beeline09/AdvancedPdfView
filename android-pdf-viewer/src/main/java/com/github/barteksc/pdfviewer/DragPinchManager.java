@@ -17,6 +17,7 @@ package com.github.barteksc.pdfviewer;
 
 import android.graphics.PointF;
 import android.graphics.RectF;
+import android.graphics.pdf.PdfDocument;
 import android.view.GestureDetector;
 import android.view.MotionEvent;
 import android.view.ScaleGestureDetector;
@@ -25,8 +26,8 @@ import android.view.View;
 import com.github.barteksc.pdfviewer.model.LinkTapEvent;
 import com.github.barteksc.pdfviewer.scroll.ScrollHandle;
 import com.github.barteksc.pdfviewer.util.SnapEdge;
-import com.shockwave.pdfium.PdfDocument;
-import com.shockwave.pdfium.util.SizeF;
+import org.benjinus.pdfium.Link;
+import org.benjinus.pdfium.util.SizeF;
 
 import static com.github.barteksc.pdfviewer.util.Constants.Pinch.MAXIMUM_ZOOM;
 import static com.github.barteksc.pdfviewer.util.Constants.Pinch.MINIMUM_ZOOM;
@@ -102,7 +103,7 @@ class DragPinchManager implements GestureDetector.OnGestureListener, GestureDete
             pageY = (int) pdfFile.getSecondaryPageOffset(page, pdfView.getZoom());
             pageX = (int) pdfFile.getPageOffset(page, pdfView.getZoom());
         }
-        for (PdfDocument.Link link : pdfFile.getPageLinks(page)) {
+        for (Link link : pdfFile.getPageLinks(page)) {
             RectF mapped = pdfFile.mapRectToDevice(page, pageX, pageY, (int) pageSize.getWidth(),
                     (int) pageSize.getHeight(), link.getBounds());
             mapped.sort();

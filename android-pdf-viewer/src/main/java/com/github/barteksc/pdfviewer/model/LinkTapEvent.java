@@ -17,7 +17,7 @@ package com.github.barteksc.pdfviewer.model;
 
 import android.graphics.RectF;
 
-import com.shockwave.pdfium.PdfDocument;
+import org.benjinus.pdfium.Link;
 
 public class LinkTapEvent {
     private float originalX;
@@ -25,9 +25,10 @@ public class LinkTapEvent {
     private float documentX;
     private float documentY;
     private RectF mappedLinkRect;
-    private PdfDocument.Link link;
+    private Link link;
 
-    public LinkTapEvent(float originalX, float originalY, float documentX, float documentY, RectF mappedLinkRect, PdfDocument.Link link) {
+    public LinkTapEvent(float originalX, float originalY, float documentX, float documentY,
+            RectF mappedLinkRect, Link link) {
         this.originalX = originalX;
         this.originalY = originalY;
         this.documentX = documentX;
@@ -56,7 +57,7 @@ public class LinkTapEvent {
         return mappedLinkRect;
     }
 
-    public PdfDocument.Link getLink() {
+    public Link getLink() {
         return link;
     }
 }
