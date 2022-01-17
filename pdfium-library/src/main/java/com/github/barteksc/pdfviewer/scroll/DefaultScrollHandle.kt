@@ -213,7 +213,7 @@ class DefaultScrollHandle @JvmOverloads constructor(
     }
 
     private val isPDFViewReady: Boolean
-        get() = pdfView != null && pdfView?.pageCount ?: 0 > 0 && pdfView?.documentFitsView() != true
+        get() = pdfView != null && pdfView?.getPageCount() ?: 0 > 0 && pdfView?.documentFitsView() != true
 
     @SuppressLint("ClickableViewAccessibility")
     override fun onTouchEvent(event: MotionEvent): Boolean {

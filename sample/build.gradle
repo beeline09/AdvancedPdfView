@@ -25,6 +25,6 @@ android {
 dependencies {
     api project(':pdfium-library')
     implementation 'androidx.appcompat:appcompat:1.4.0'
-    implementation 'org.androidannotations:androidannotations-api:4.6.0'
-    annotationProcessor "org.androidannotations:androidannotations:4.6.0"
+    implementation 'org.androidannotations:androidannotations-api:4.8.0'
+    annotationProcessor 'org.androidannotations:androidannotations:4.8.0'
 }

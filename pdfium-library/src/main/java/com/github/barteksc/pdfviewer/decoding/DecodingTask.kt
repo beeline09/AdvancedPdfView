@@ -31,16 +31,16 @@ internal class DecodingTask(
                 password
             )
             pdfFile = PdfFile(
-                pdfiumSDK,
-                pdfView.pageFitPolicy,
-                getViewSize(pdfView),
-                userPages,
-                pdfView.isSwipeVertical,
-                pdfView.spacingPx,
-                pdfView.isAutoSpacingEnabled,
-                pdfView.isFitEachPage
+                pdfiumCore = pdfiumSDK,
+                pageFitPolicy = pdfView.pageFitPolicy,
+                viewSize = getViewSize(pdfView),
+                originalUserPages = userPages,
+                isVertical = pdfView.isSwipeVertical,
+                spacingPx = pdfView.spacingPx,
+                autoSpacing = pdfView.isAutoSpacingEnabled(),
+                fitEachPage = pdfView.isFitEachPage
             )
-            pdfFile?.textHighlightColor = pdfView.textHighlightColor
+            pdfFile?.textHighlightColor = pdfView.getTextHighlightColor()
             pdfFile
         } else {
             throw NullPointerException("pdfView == null")

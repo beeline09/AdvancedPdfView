@@ -176,7 +176,7 @@ class PdfFile(
         return pdfiumCore.metaData
     }
 
-    fun getBookmarks(): List<Bookmark?> {
+    fun getBookmarks(): List<Bookmark> {
         return pdfiumCore.bookmarks
     }
 

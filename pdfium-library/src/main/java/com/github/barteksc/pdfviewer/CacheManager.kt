@@ -8,7 +8,7 @@ import java.util.ArrayList
 import java.util.Comparator
 import java.util.PriorityQueue
 
-internal class CacheManager {
+class CacheManager {
     private val passiveCache: PriorityQueue<PagePart>
     private val activeCache: PriorityQueue<PagePart>
     private val thumbnails: MutableList<PagePart>
@@ -67,7 +67,7 @@ internal class CacheManager {
 
     fun upPartIfContained(
         page: Int,
-        pageRelativeBounds: RectF?,
+        pageRelativeBounds: RectF,
         toOrder: Int,
         searchQuery: String?
     ): Boolean {
@@ -103,7 +103,7 @@ internal class CacheManager {
      */
     fun containsThumbnail(
         page: Int,
-        pageRelativeBounds: RectF?,
+        pageRelativeBounds: RectF,
         searchQuery: String?
     ): Boolean {
         val fakePart = PagePart(

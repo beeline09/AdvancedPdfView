@@ -27,6 +27,7 @@ import com.github.barteksc.pdfviewer.util.MathUtils.floor
 import com.github.barteksc.pdfviewer.util.MathUtils.max
 import com.github.barteksc.pdfviewer.util.MathUtils.min
 import com.github.barteksc.pdfviewer.util.Util.getDP
+import org.benjinus.pdfium.util.SizeF
 import java.util.LinkedList
 import kotlin.math.abs
 
@@ -80,7 +81,10 @@ internal class PagesLoader(private val pdfView: PDFView) {
         grid: GridSize,
         pageIndex: Int
     ) {
-        val size = pdfView.pdfFile.getPageSize(pageIndex)
+        val size = pdfView.pdfFile?.getPageSize(pageIndex) ?: SizeF(
+            0f,
+            0f
+        )
         val ratioX = 1f / size.width
         val ratioY = 1f / size.height
         val partHeight = Constants.PART_SIZE * ratioY / pdfView.zoom
@@ -123,14 +127,14 @@ internal class PagesLoader(private val pdfView: PDFView) {
         )
         val offsetFirst = if (pdfView.isSwipeVertical) fixedFirstYOffset else fixedFirstXOffset
         val offsetLast = if (pdfView.isSwipeVertical) fixedLastYOffset else fixedLastXOffset
-        val firstPage = pdfView.pdfFile.getPageAtOffset(
+        val firstPage = pdfView.pdfFile?.getPageAtOffset(
             offsetFirst,
             pdfView.zoom
-        )
-        val lastPage = pdfView.pdfFile.getPageAtOffset(
+        ) ?: 0
+        val lastPage = pdfView.pdfFile?.getPageAtOffset(
             offsetLast,
             pdfView.zoom
-        )
+        ) ?: 0
         val pageCount = lastPage - firstPage + 1
         val renderRanges: MutableList<RenderRange> = LinkedList()
         for (page in firstPage..lastPage) {
@@ -147,27 +151,27 @@ internal class PagesLoader(private val pdfView: PDFView) {
                     pageLastXOffset = fixedLastXOffset
                     pageLastYOffset = fixedLastYOffset
                 } else {
-                    val pageOffset = pdfView.pdfFile.getPageOffset(
+                    val pageOffset = pdfView.pdfFile?.getPageOffset(
                         page,
                         pdfView.zoom
-                    )
-                    val pageSize = pdfView.pdfFile.getScaledPageSize(
+                    ) ?: 0f
+                    val pageSize = pdfView.pdfFile?.getScaledPageSize(
                         page,
                         pdfView.zoom
                     )
                     if (pdfView.isSwipeVertical) {
                         pageLastXOffset = fixedLastXOffset
-                        pageLastYOffset = pageOffset + pageSize.height
+                        pageLastYOffset = pageOffset + (pageSize?.height ?: 0f)
                     } else {
                         pageLastYOffset = fixedLastYOffset
-                        pageLastXOffset = pageOffset + pageSize.width
+                        pageLastXOffset = pageOffset + (pageSize?.width ?: 0f)
                     }
                 }
             } else if (page == lastPage) {
-                val pageOffset = pdfView.pdfFile.getPageOffset(
+                val pageOffset = pdfView.pdfFile?.getPageOffset(
                     page,
                     pdfView.zoom
-                )
+                ) ?: 0f
                 if (pdfView.isSwipeVertical) {
                     pageFirstXOffset = fixedFirstXOffset
                     pageFirstYOffset = pageOffset
@@ -178,11 +182,11 @@ internal class PagesLoader(private val pdfView: PDFView) {
                 pageLastXOffset = fixedLastXOffset
                 pageLastYOffset = fixedLastYOffset
             } else {
-                val pageOffset = pdfView.pdfFile.getPageOffset(
+                val pageOffset = pdfView.pdfFile?.getPageOffset(
                     page,
                     pdfView.zoom
-                )
-                val pageSize = pdfView.pdfFile.getScaledPageSize(
+                ) ?: 0f
+                val pageSize = pdfView.pdfFile?.getScaledPageSize(
                     page,
                     pdfView.zoom
                 )
@@ -190,11 +194,11 @@ internal class PagesLoader(private val pdfView: PDFView) {
                     pageFirstXOffset = fixedFirstXOffset
                     pageFirstYOffset = pageOffset
                     pageLastXOffset = fixedLastXOffset
-                    pageLastYOffset = pageOffset + pageSize.height
+                    pageLastYOffset = pageOffset + (pageSize?.height ?: 0f)
                 } else {
                     pageFirstXOffset = pageOffset
                     pageFirstYOffset = fixedFirstYOffset
-                    pageLastXOffset = pageOffset + pageSize.width
+                    pageLastXOffset = pageOffset + (pageSize?.width ?: 0f)
                     pageLastYOffset = fixedLastYOffset
                 }
             }
@@ -202,9 +206,12 @@ internal class PagesLoader(private val pdfView: PDFView) {
                 range.gridSize,
                 range.page
             ) // get the page's grid size that rows and cols
-            val scaledPageSize = pdfView.pdfFile.getScaledPageSize(
+            val scaledPageSize = pdfView.pdfFile?.getScaledPageSize(
                 range.page,
                 pdfView.zoom
+            ) ?: SizeF(
+                0f,
+                0f
             )
             val rowHeight = scaledPageSize.height / range.gridSize.rows
             val colWidth = scaledPageSize.width / range.gridSize.cols
@@ -216,19 +223,19 @@ internal class PagesLoader(private val pdfView: PDFView) {
             // |            |           |            |
             // |            |           |            |
             // ---------------------------------------
-            val secondaryOffset = pdfView.pdfFile.getSecondaryPageOffset(
+            val secondaryOffset = pdfView.pdfFile?.getSecondaryPageOffset(
                 page,
                 pdfView.zoom
-            )
+            ) ?: 0f
 
             // calculate the row,col of the point in the leftTop and rightBottom
             if (pdfView.isSwipeVertical) {
                 range.leftTop.row = floor(
                     abs(
-                        pageFirstYOffset - pdfView.pdfFile.getPageOffset(
+                        pageFirstYOffset - (pdfView.pdfFile?.getPageOffset(
                             range.page,
                             pdfView.zoom
-                        )
+                        ) ?: 0f)
                     ) / rowHeight
                 )
                 range.leftTop.col = floor(
@@ -239,10 +246,10 @@ internal class PagesLoader(private val pdfView: PDFView) {
                 )
                 range.rightBottom.row = ceil(
                     abs(
-                        pageLastYOffset - pdfView.pdfFile.getPageOffset(
+                        pageLastYOffset - (pdfView.pdfFile?.getPageOffset(
                             range.page,
                             pdfView.zoom
-                        )
+                        ) ?: 0f)
                     ) / rowHeight
                 )
                 range.rightBottom.col = floor(
@@ -254,10 +261,10 @@ internal class PagesLoader(private val pdfView: PDFView) {
             } else {
                 range.leftTop.col = floor(
                     abs(
-                        pageFirstXOffset - pdfView.pdfFile.getPageOffset(
+                        pageFirstXOffset - (pdfView.pdfFile?.getPageOffset(
                             range.page,
                             pdfView.zoom
-                        )
+                        ) ?: 0f)
                     ) / colWidth
                 )
                 range.leftTop.row = floor(
@@ -268,10 +275,10 @@ internal class PagesLoader(private val pdfView: PDFView) {
                 )
                 range.rightBottom.col = floor(
                     abs(
-                        pageLastXOffset - pdfView.pdfFile.getPageOffset(
+                        pageLastXOffset - (pdfView.pdfFile?.getPageOffset(
                             range.page,
                             pdfView.zoom
-                        )
+                        ) ?: 0f)
                     ) / colWidth
                 )
                 range.rightBottom.row = floor(
@@ -389,7 +396,7 @@ internal class PagesLoader(private val pdfView: PDFView) {
                     searchQuery
                 )
             ) {
-                pdfView.renderingHandler.addRenderingTask(
+                pdfView.renderingHandler?.addPartRenderingTask(
                     page,
                     renderWidth,
                     renderHeight,
@@ -411,7 +418,10 @@ internal class PagesLoader(private val pdfView: PDFView) {
         page: Int,
         searchQuery: String
     ) {
-        val pageSize = pdfView.pdfFile.getPageSize(page)
+        val pageSize = pdfView.pdfFile?.getPageSize(page) ?: SizeF(
+            0f,
+            0f
+        )
         val thumbnailWidth = pageSize.width * Constants.THUMBNAIL_RATIO
         val thumbnailHeight = pageSize.height * Constants.THUMBNAIL_RATIO
         if (!pdfView.cacheManager.containsThumbnail(
@@ -420,7 +430,7 @@ internal class PagesLoader(private val pdfView: PDFView) {
                 searchQuery
             )
         ) {
-            pdfView.renderingHandler.addRenderingTask(
+            pdfView.renderingHandler?.addPartRenderingTask(
                 page,
                 thumbnailWidth,
                 thumbnailHeight,
@@ -450,9 +460,29 @@ internal class PagesLoader(private val pdfView: PDFView) {
     fun parseText(pagesIndexes: List<Int>) {
         if (pagesIndexes.isNotEmpty()) {
             for (index in pagesIndexes) {
-                pdfView.renderingHandler.addParseTextTask(index)
+                pdfView.renderingHandler?.addParseTextTask(index)
             }
         }
+    }
+
+    fun renderPage(
+        page: Int,
+        isThumbnail: Boolean = true
+    ) {
+        val ratio = if (isThumbnail) Constants.THUMBNAIL_RATIO else 1.0f
+        val pageSize = pdfView.pdfFile?.getPageSize(page) ?: SizeF(
+            0f,
+            0f
+        )
+        val width = pageSize.width * ratio
+        val height = pageSize.height * ratio
+
+        pdfView.renderingHandler?.addPageRenderingTask(
+            page = page,
+            width = width,
+            height = height
+        )
+
     }
 
 }

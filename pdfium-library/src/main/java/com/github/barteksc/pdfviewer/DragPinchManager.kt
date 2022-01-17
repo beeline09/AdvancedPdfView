@@ -182,7 +182,7 @@ internal class DragPinchManager @SuppressLint("ClickableViewAccessibility") cons
         val targetPage = max(
             0,
             min(
-                pdfView.pageCount - 1,
+                pdfView.getPageCount() - 1,
                 startingPage + direction
             )
         )
@@ -241,7 +241,7 @@ internal class DragPinchManager @SuppressLint("ClickableViewAccessibility") cons
         distanceY: Float
     ): Boolean {
         scrolling = true
-        if (pdfView.isZooming || pdfView.isSwipeEnabled) {
+        if (pdfView.isZooming() || pdfView.isSwipeEnabled()) {
             pdfView.moveRelativeTo(
                 -distanceX,
                 -distanceY
@@ -271,10 +271,10 @@ internal class DragPinchManager @SuppressLint("ClickableViewAccessibility") cons
         velocityX: Float,
         velocityY: Float
     ): Boolean {
-        if (!pdfView.isSwipeEnabled) {
+        if (!pdfView.isSwipeEnabled()) {
             return false
         }
-        if (pdfView.isPageFlingEnabled) {
+        if (pdfView.isPageFlingEnabled()) {
             if (pdfView.pageFillsScreen()) {
                 onBoundedFling(
                     velocityX,
@@ -296,11 +296,11 @@ internal class DragPinchManager @SuppressLint("ClickableViewAccessibility") cons
         val minY: Float
         val pdfFile = pdfView.pdfFile
         if (pdfView.isSwipeVertical) {
-            minX = -(pdfView.toCurrentScale(pdfFile.maxPageWidth) - pdfView.width)
-            minY = -(pdfFile.getDocLen(pdfView.zoom) - pdfView.height)
+            minX = -(pdfView.toCurrentScale(pdfFile?.maxPageWidth?:0f) - pdfView.width)
+            minY = -((pdfFile?.getDocLen(pdfView.zoom)?:0f) - pdfView.height)
         } else {
-            minX = -(pdfFile.getDocLen(pdfView.zoom) - pdfView.width)
-            minY = -(pdfView.toCurrentScale(pdfFile.maxPageHeight) - pdfView.height)
+            minX = -((pdfFile?.getDocLen(pdfView.zoom)?:0f) - pdfView.width)
+            minY = -(pdfView.toCurrentScale(pdfFile?.maxPageHeight?:0f) - pdfView.height)
         }
         animationManager.startFlingAnimation(
             xOffset,
@@ -322,26 +322,26 @@ internal class DragPinchManager @SuppressLint("ClickableViewAccessibility") cons
         val xOffset = pdfView.currentXOffset.toInt()
         val yOffset = pdfView.currentYOffset.toInt()
         val pdfFile = pdfView.pdfFile
-        val pageStart = -pdfFile.getPageOffset(
+        val pageStart = -(pdfFile?.getPageOffset(
             pdfView.currentPage,
             pdfView.zoom
-        )
-        val pageEnd = pageStart - pdfFile.getPageLength(
+        )?:0f)
+        val pageEnd = pageStart - (pdfFile?.getPageLength(
             pdfView.currentPage,
             pdfView.zoom
-        )
+        )?:0f)
         val minX: Float
         val minY: Float
         val maxX: Float
         val maxY: Float
         if (pdfView.isSwipeVertical) {
-            minX = -(pdfView.toCurrentScale(pdfFile.maxPageWidth) - pdfView.width)
+            minX = -(pdfView.toCurrentScale(pdfFile?.maxPageWidth?:0f) - pdfView.width)
             minY = pageEnd + pdfView.height
             maxX = 0f
             maxY = pageStart
         } else {
             minX = pageEnd + pdfView.width
-            minY = -(pdfView.toCurrentScale(pdfFile.maxPageHeight) - pdfView.height)
+            minY = -(pdfView.toCurrentScale(pdfFile?.maxPageHeight?:0f) - pdfView.height)
             maxX = pageStart
             maxY = 0f
         }

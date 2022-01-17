@@ -244,9 +244,7 @@ internal class AnimationManager(private val pdfView: PDFView) {
     }
 
     private fun hideHandle() {
-        if (pdfView.scrollHandle != null) {
-            pdfView.scrollHandle.hideDelayed()
-        }
+        pdfView.scrollHandle?.hideDelayed()
     }
 
 }

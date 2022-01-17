@@ -18,28 +18,21 @@ package com.github.barteksc.sample;
 import java.util.ArrayList;
 import java.util.List;
 
-import android.content.ActivityNotFoundException;
-import android.content.Intent;
-import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.net.Uri;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
-import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.app.ActivityCompat;
-import androidx.core.content.ContextCompat;
 import com.github.barteksc.pdfviewer.PDFView;
 import com.github.barteksc.pdfviewer.listener.OnLoadCompleteListener;
 import com.github.barteksc.pdfviewer.listener.OnPageChangeListener;
 import com.github.barteksc.pdfviewer.listener.OnPageErrorListener;
 import com.github.barteksc.pdfviewer.scroll.DefaultScrollHandle;
-import com.github.barteksc.pdfviewer.util.ColorScheme;
 import com.github.barteksc.pdfviewer.util.FitPolicy;
 import org.benjinus.pdfium.Bookmark;
 import org.benjinus.pdfium.Meta;
@@ -74,40 +67,44 @@ public class PDFViewActivity extends AppCompatActivity
     @Override
     public boolean onOptionsItemSelected(@NonNull MenuItem item) {
         if (item.getItemId() == R.id.pickFile) {
-            if (pdfView.getSearchQuery().equalsIgnoreCase("Visual Studio")){
+/*            if (pdfView.getSearchQuery().equalsIgnoreCase("Visual Studio")){
                 pdfView.setSearchQuery("");
             } else {
                 pdfView.setSearchQuery("Visual Studio");
-            }
+            }*/
 
-            if (pdfView.isColorSchemeOverridden()){
-                pdfView.overrideColorScheme(null);
-            } else {
-                pdfView.overrideColorScheme(new ColorScheme(
-                        Color.parseColor("#AAFFFFFF"), //BLUE
-                        Color.parseColor("#FFFFFFFF"), //линии, рамки...
-                        Color.parseColor("#FFFFFFFF"), //текст
-                        Color.parseColor("#FF000000"),
-                        Color.BLACK
-                        ) //BLACL
-                );
-            }
-/*            int countPages = pdfView.getTotalPagesCount();
+//            if (pdfView.isColorSchemeOverridden()){
+//                pdfView.overrideColorScheme(null);
+//            } else {
+//                pdfView.overrideColorScheme(new ColorScheme(
+//                        Color.parseColor("#AAFFFFFF"), //BLUE
+//                        Color.parseColor("#FFFFFFFF"), //линии, рамки...
+//                        Color.parseColor("#FFFFFFFF"), //текст
+//                        Color.parseColor("#FF000000"),
+//                        Color.BLACK
+//                        ) //BLACL
+//                );
+//            }
+            int countPages = pdfView.getTotalPagesCount();
             ArrayList<Integer> arr = new ArrayList<>();
             for (int i = 0; i < countPages; i++) {
                 arr.add(i);
             }
-            pdfView.parseText(arr, new PDFView.OnTextParseListener() {
-                @Override
-                public void onTextParseSuccess(int pageIndex, @NonNull String text) {
+//            pdfView.parseText(arr, new PDFView.OnTextParseListener() {
+//                @Override
+//                public void onTextParseSuccess(int pageIndex, @NonNull String text) {
+//
+//                }
+//
+//                @Override
+//                public void onTextParseError(int pageIndex) {
+//
+//                }
+//            });
 
-                }
-
-                @Override
-                public void onTextParseError(int pageIndex) {
-
-                }
-            });*/
+            for (int i = 0 ; i < arr.size(); i+=10){
+                pdfView.renderPageBitmap(i, true);
+            }
         }
         return super.onOptionsItemSelected(item);
     }
@@ -131,16 +128,24 @@ public class PDFViewActivity extends AppCompatActivity
     private void displayFromAsset(String assetFileName) {
         pdfFileName = assetFileName;
 
-        pdfView.fromAsset(SAMPLE_FILE).defaultPage(pageNumber).onPageChange(this)
-                .enableAnnotationRendering(true).onLoad(this)
-                .scrollHandle(new DefaultScrollHandle(this)).spacing(10) // in dp
+        pdfView.fromAsset(SAMPLE_FILE)
+                .defaultPage(pageNumber)
+                .onPageChange(this)
+                .enableAnnotationRendering(true)
+                .onLoad(this)
+                .scrollHandle(new DefaultScrollHandle(this))
+                .spacing(50) // in dp
                 .defaultPage(45)
                 .textHighlightColor(Color.RED)
 //                .scrollHandle(null)
                 .onPageChange(
                         (page, pageCount) -> Log.e(TAG, "Current page is "+page+" of "+pageCount+""))
                 //                .nightMode(true)
-                .onPageError(this).pageFitPolicy(FitPolicy.BOTH).load();
+                .onPageError(this)
+                .pageFitPolicy(FitPolicy.BOTH)
+                .onPageBitmapRendered(
+                        (pageIndex, bitmap) -> Log.e(TAG, "Page "+pageIndex+" bitmap rendered"))
+                .load();
 
         pdfView.setSearchQuery("angular");
     }
@@ -154,16 +159,18 @@ public class PDFViewActivity extends AppCompatActivity
     @Override
     public void loadComplete(int nbPages) {
         Meta meta = pdfView.getDocumentMeta();
-        Log.e(TAG, "title = " + meta.getTitle());
-        Log.e(TAG, "author = " + meta.getAuthor());
-        Log.e(TAG, "subject = " + meta.getSubject());
-        Log.e(TAG, "keywords = " + meta.getKeywords());
-        Log.e(TAG, "creator = " + meta.getCreator());
-        Log.e(TAG, "producer = " + meta.getProducer());
-        Log.e(TAG, "creationDate = " + meta.getCreationDate());
-        Log.e(TAG, "modDate = " + meta.getModDate());
+        if (meta != null) {
+            Log.e(TAG, "title = " + meta.getTitle());
+            Log.e(TAG, "author = " + meta.getAuthor());
+            Log.e(TAG, "subject = " + meta.getSubject());
+            Log.e(TAG, "keywords = " + meta.getKeywords());
+            Log.e(TAG, "creator = " + meta.getCreator());
+            Log.e(TAG, "producer = " + meta.getProducer());
+            Log.e(TAG, "creationDate = " + meta.getCreationDate());
+            Log.e(TAG, "modDate = " + meta.getModDate());
+        }
 
-        printBookmarksTree(pdfView.getTableOfContents(), "-");
+//        printBookmarksTree(pdfView.getTableOfContents(), "-");
     }
 
     public void printBookmarksTree(@NonNull List<Bookmark> tree, String sep) {
