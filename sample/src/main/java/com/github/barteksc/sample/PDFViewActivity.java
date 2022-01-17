@@ -45,9 +45,7 @@ public class PDFViewActivity extends AppCompatActivity
     private final static int REQUEST_CODE = 42;
     public static final int PERMISSION_CODE = 42042;
 
-    public static final String SAMPLE_FILE = "3945.pdf";
-    //public static final String SAMPLE_FILE = "test.pdf";
-    //    public static final String SAMPLE_FILE = "matt_power.pdf";
+    public static final String SAMPLE_FILE = "sample.pdf";
     public static final String READ_EXTERNAL_STORAGE = "android.permission.READ_EXTERNAL_STORAGE";
 
     PDFView pdfView;
@@ -67,10 +65,10 @@ public class PDFViewActivity extends AppCompatActivity
     @Override
     public boolean onOptionsItemSelected(@NonNull MenuItem item) {
         if (item.getItemId() == R.id.pickFile) {
-/*            if (pdfView.getSearchQuery().equalsIgnoreCase("Visual Studio")){
+/*            if (pdfView.getSearchQuery().equalsIgnoreCase("Google")){
                 pdfView.setSearchQuery("");
             } else {
-                pdfView.setSearchQuery("Visual Studio");
+                pdfView.setSearchQuery("Google");
             }*/
 
 //            if (pdfView.isColorSchemeOverridden()){
@@ -135,7 +133,7 @@ public class PDFViewActivity extends AppCompatActivity
                 .onLoad(this)
                 .scrollHandle(new DefaultScrollHandle(this))
                 .spacing(50) // in dp
-                .defaultPage(45)
+                .defaultPage(2)
                 .textHighlightColor(Color.RED)
 //                .scrollHandle(null)
                 .onPageChange(
