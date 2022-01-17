@@ -71,36 +71,36 @@ public class PDFViewActivity extends AppCompatActivity
                 pdfView.setSearchQuery("Google");
             }*/
 
-//            if (pdfView.isColorSchemeOverridden()){
-//                pdfView.overrideColorScheme(null);
-//            } else {
-//                pdfView.overrideColorScheme(new ColorScheme(
-//                        Color.parseColor("#AAFFFFFF"), //BLUE
-//                        Color.parseColor("#FFFFFFFF"), //линии, рамки...
-//                        Color.parseColor("#FFFFFFFF"), //текст
-//                        Color.parseColor("#FF000000"),
-//                        Color.BLACK
-//                        ) //BLACL
-//                );
-//            }
+            //            if (pdfView.isColorSchemeOverridden()){
+            //                pdfView.overrideColorScheme(null);
+            //            } else {
+            //                pdfView.overrideColorScheme(new ColorScheme(
+            //                        Color.parseColor("#AAFFFFFF"), //BLUE
+            //                        Color.parseColor("#FFFFFFFF"), //линии, рамки...
+            //                        Color.parseColor("#FFFFFFFF"), //текст
+            //                        Color.parseColor("#FF000000"),
+            //                        Color.BLACK
+            //                        ) //BLACL
+            //                );
+            //            }
             int countPages = pdfView.getTotalPagesCount();
             ArrayList<Integer> arr = new ArrayList<>();
             for (int i = 0; i < countPages; i++) {
                 arr.add(i);
             }
-//            pdfView.parseText(arr, new PDFView.OnTextParseListener() {
-//                @Override
-//                public void onTextParseSuccess(int pageIndex, @NonNull String text) {
-//
-//                }
-//
-//                @Override
-//                public void onTextParseError(int pageIndex) {
-//
-//                }
-//            });
+            //            pdfView.parseText(arr, new PDFView.OnTextParseListener() {
+            //                @Override
+            //                public void onTextParseSuccess(int pageIndex, @NonNull String text) {
+            //
+            //                }
+            //
+            //                @Override
+            //                public void onTextParseError(int pageIndex) {
+            //
+            //                }
+            //            });
 
-            for (int i = 0 ; i < arr.size(); i+=10){
+            for (int i = 0; i < arr.size(); i += 10) {
                 pdfView.renderPageBitmap(i, true);
             }
         }
@@ -126,24 +126,16 @@ public class PDFViewActivity extends AppCompatActivity
     private void displayFromAsset(String assetFileName) {
         pdfFileName = assetFileName;
 
-        pdfView.fromAsset(SAMPLE_FILE)
-                .defaultPage(pageNumber)
-                .onPageChange(this)
-                .enableAnnotationRendering(true)
-                .onLoad(this)
-                .scrollHandle(new DefaultScrollHandle(this))
-                .spacing(50) // in dp
-                .defaultPage(2)
-                .textHighlightColor(Color.RED)
-//                .scrollHandle(null)
-                .onPageChange(
-                        (page, pageCount) -> Log.e(TAG, "Current page is "+page+" of "+pageCount+""))
+        pdfView.fromAsset(SAMPLE_FILE).defaultPage(pageNumber).onPageChange(this)
+                .enableAnnotationRendering(true).onLoad(this)
+                .scrollHandle(new DefaultScrollHandle(this)).spacing(50) // in dp
+                .defaultPage(2).textHighlightColor(Color.RED)
+                //                .scrollHandle(null)
+                .onPageChange((page, pageCount) -> Log
+                        .e(TAG, "Current page is " + page + " of " + pageCount + ""))
                 //                .nightMode(true)
-                .onPageError(this)
-                .pageFitPolicy(FitPolicy.BOTH)
-                .onPageBitmapRendered(
-                        (pageIndex, bitmap) -> Log.e(TAG, "Page "+pageIndex+" bitmap rendered"))
-                .load();
+                .onPageError(this).pageFitPolicy(FitPolicy.BOTH).onPageBitmapRendered(
+                (pageIndex, bitmap) -> Log.e(TAG, "Page " + pageIndex + " bitmap rendered")).load();
 
         pdfView.setSearchQuery("angular");
     }
@@ -168,7 +160,7 @@ public class PDFViewActivity extends AppCompatActivity
             Log.e(TAG, "modDate = " + meta.getModDate());
         }
 
-//        printBookmarksTree(pdfView.getTableOfContents(), "-");
+        //        printBookmarksTree(pdfView.getTableOfContents(), "-");
     }
 
     public void printBookmarksTree(@NonNull List<Bookmark> tree, String sep) {
