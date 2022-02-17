@@ -14,6 +14,7 @@ import android.util.Log
 import com.github.barteksc.pdfviewer.RenderingHandler.RenderingTask
 import com.github.barteksc.pdfviewer.exception.PageRenderingException
 import com.github.barteksc.pdfviewer.model.PagePart
+import com.github.barteksc.pdfviewer.util.addArea
 import kotlin.math.abs
 import kotlin.math.max
 import kotlin.math.min
@@ -107,9 +108,12 @@ internal class RenderingHandler(
                 }
             } else if (message.what == MSG_RENDER_PAGE_TASK) {
                 val bitmap = renderPage(renderingTask = task)
-                if (running){
+                if (running) {
                     pdfView.post {
-                        pdfView.onPageRendered(pageIndex = task.page, bitmap = bitmap)
+                        pdfView.onPageRendered(
+                            pageIndex = task.page,
+                            bitmap = bitmap
+                        )
                     }
                 } else {
                     bitmap?.recycle()
@@ -169,7 +173,12 @@ internal class RenderingHandler(
         pdfFile?.renderPageBitmap(
             bitmap = pageBitmap,
             pageIndex = renderingTask.page,
-            bounds = Rect(0,0,w,h),
+            bounds = Rect(
+                0,
+                0,
+                w,
+                h
+            ),
             annotationRendering = renderingTask.annotationRendering,
             colorScheme = pdfView.colorScheme
         )
@@ -192,8 +201,8 @@ internal class RenderingHandler(
         val pageBitmap: Bitmap = try {
             Bitmap.createBitmap(
                 w,
-                h,  /*renderingTask.bestQuality ? */
-                Bitmap.Config.ARGB_8888 /* : Bitmap.Config.RGB_565*/
+                h,
+                Bitmap.Config.ARGB_8888
             )
         } catch (e: IllegalArgumentException) {
             Log.e(
@@ -225,13 +234,7 @@ internal class RenderingHandler(
             h,
             renderingTask.bounds
         )
-/*        val rotation = pdfFile?.getPageRotation(renderingTask.page)?:0
-        if (rotation != 0) {
-            Log.e(
-                TAG,
-                "Page rotation: " + rotation + "_"
-            )
-        }*/
+
         val searchQuery = renderingTask.searchQuery ?: ""
         if (searchQuery.isNotBlank()) {
             val search = pdfFile?.newPageSearch(
@@ -258,11 +261,12 @@ internal class RenderingHandler(
                             val r1 = rect.right * roundedRenderBounds.width() / nativePageWidth
                             val b1 =
                                 roundedRenderBounds.height() - rect.bottom * roundedRenderBounds.height() / nativePageHeight
-                            var strLen = searchQuery.length - 1
+                            var strLen = searchQuery.length
                             if (strLen < 1) {
                                 strLen = 1
                             }
-                            val w1 = l1 + (r1 - l1) * strLen
+                            val oneSymbolWidth = r1 - l1
+                            val w1 = l1 + oneSymbolWidth * strLen
                             p.color = pdfFile.textHighlightColor
                             c.drawRect(
                                 RectF(
@@ -270,7 +274,11 @@ internal class RenderingHandler(
                                     t1,
                                     w1,
                                     b1
-                                ),
+                                ).also {
+                                    it.addArea(
+                                        scaleFactorVertical = 0.3f
+                                    )
+                                },
                                 p
                             )
                         } else {
@@ -285,25 +293,20 @@ internal class RenderingHandler(
                         )
                         val left = rect.left / nativePageWidth * renderBounds.width()
                         val rr = rect.right / nativePageWidth * renderBounds.width()
-                        var strLen = searchQuery.length - 2
+                        var strLen = searchQuery.length
                         if (strLen < 1) {
                             strLen = 1
                         }
-                        if (searchQuery.length <= 2 && strLen < 2) {
-                            strLen = 2
-                        }
                         val symbolWidth = rr - left
-                        val ww1 = left + symbolWidth * strLen
+                        val ww1 = left + (symbolWidth * (strLen + 1))
                         val rectForSearch = RectF(
                             left,
                             renderBounds.height() - rect.top / nativePageHeight * renderBounds.height(),
                             ww1,
                             renderBounds.height() - rect.bottom / nativePageHeight * renderBounds.height()
                         )
-                        if ( /*rectForSearch.left <= rectForBitmap.right &&
-                            rectForSearch.right >= rectForBitmap.left*/rectForSearch.intersect(rectForBitmap)) {
+                        if (rectForSearch.intersect(rectForBitmap)) {
 
-                            //                        float halfSymbolWidth = symbolWidth / 4.0f;
                             val l1 = abs(
                                 abs(rectForSearch.left) - abs(rectForBitmap.left)
                             )
@@ -313,7 +316,6 @@ internal class RenderingHandler(
                             val r1 = l1 + rectForSearch.width()
                             val b1 = t1 + rectForSearch.height()
 
-                            //                        float w1 = l1 + (r1 - l1) * (strLen);
                             val realRect = RectF(
                                 max(
                                     0f,
@@ -337,7 +339,11 @@ internal class RenderingHandler(
                                     pageBitmap.height.toFloat(),
                                     b1
                                 )
-                            )
+                            ).also {
+                                it.addArea(
+                                    scaleFactorVertical = 0.3f
+                                )
+                            }
                             p.color = pdfFile.textHighlightColor
                             c.drawRect(
                                 realRect,

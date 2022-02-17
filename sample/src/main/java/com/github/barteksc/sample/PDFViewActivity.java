@@ -33,9 +33,11 @@ import com.github.barteksc.pdfviewer.listener.OnLoadCompleteListener;
 import com.github.barteksc.pdfviewer.listener.OnPageChangeListener;
 import com.github.barteksc.pdfviewer.listener.OnPageErrorListener;
 import com.github.barteksc.pdfviewer.scroll.DefaultScrollHandle;
+import com.github.barteksc.pdfviewer.util.ColorScheme;
 import com.github.barteksc.pdfviewer.util.FitPolicy;
 import org.benjinus.pdfium.Bookmark;
 import org.benjinus.pdfium.Meta;
+import org.benjinus.pdfium.util.SizeF;
 
 public class PDFViewActivity extends AppCompatActivity
         implements OnPageChangeListener, OnLoadCompleteListener, OnPageErrorListener {
@@ -45,7 +47,7 @@ public class PDFViewActivity extends AppCompatActivity
     private final static int REQUEST_CODE = 42;
     public static final int PERMISSION_CODE = 42042;
 
-    public static final String SAMPLE_FILE = "sample.pdf";
+    public static final String SAMPLE_FILE = "sample-pdf-with-images.pdf";
     public static final String READ_EXTERNAL_STORAGE = "android.permission.READ_EXTERNAL_STORAGE";
 
     PDFView pdfView;
@@ -65,43 +67,40 @@ public class PDFViewActivity extends AppCompatActivity
     @Override
     public boolean onOptionsItemSelected(@NonNull MenuItem item) {
         if (item.getItemId() == R.id.pickFile) {
-/*            if (pdfView.getSearchQuery().equalsIgnoreCase("Google")){
+            if (pdfView.getSearchQuery().equalsIgnoreCase("Curabitur")) {
                 pdfView.setSearchQuery("");
             } else {
-                pdfView.setSearchQuery("Google");
-            }*/
+                pdfView.setSearchQuery("Curabitur");
+            }
 
-            //            if (pdfView.isColorSchemeOverridden()){
-            //                pdfView.overrideColorScheme(null);
-            //            } else {
-            //                pdfView.overrideColorScheme(new ColorScheme(
-            //                        Color.parseColor("#AAFFFFFF"), //BLUE
-            //                        Color.parseColor("#FFFFFFFF"), //линии, рамки...
-            //                        Color.parseColor("#FFFFFFFF"), //текст
-            //                        Color.parseColor("#FF000000"),
-            //                        Color.BLACK
-            //                        ) //BLACL
-            //                );
-            //            }
+            if (pdfView.isColorSchemeOverridden()) {
+                pdfView.overrideColorScheme(null);
+            } else {
+                pdfView.overrideColorScheme(new ColorScheme(Color.parseColor("#AAFFFFFF"), //BLUE
+                        Color.parseColor("#FFFFFFFF"), //линии, рамки...
+                        Color.parseColor("#FFFFFFFF"), //текст
+                        Color.parseColor("#FF000000"), Color.BLACK) //BLACL
+                );
+            }
             int countPages = pdfView.getTotalPagesCount();
             ArrayList<Integer> arr = new ArrayList<>();
             for (int i = 0; i < countPages; i++) {
                 arr.add(i);
             }
-            //            pdfView.parseText(arr, new PDFView.OnTextParseListener() {
-            //                @Override
-            //                public void onTextParseSuccess(int pageIndex, @NonNull String text) {
-            //
-            //                }
-            //
-            //                @Override
-            //                public void onTextParseError(int pageIndex) {
-            //
-            //                }
-            //            });
+            pdfView.parseText(arr, new PDFView.OnTextParseListener() {
+                @Override
+                public void onTextParseSuccess(int pageIndex, @NonNull String text) {
+                    Log.e(TAG, "Page " + pageIndex + " parsed! Text: " + text);
+                }
+
+                @Override
+                public void onTextParseError(int pageIndex) {
+                    Log.e(TAG, "Page " + pageIndex + " parse error!");
+                }
+            });
 
             for (int i = 0; i < arr.size(); i += 10) {
-                pdfView.renderPageBitmap(i, true);
+                pdfView.renderPageBitmap(i, true, new SizeF(10f, 10f));
             }
         }
         return super.onOptionsItemSelected(item);

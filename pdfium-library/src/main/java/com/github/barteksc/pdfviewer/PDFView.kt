@@ -1026,7 +1026,14 @@ class PDFView(
         )
     }
 
-    fun renderPageBitmap(pageIndex: Int, isThumbnail: Boolean = false){
+    fun renderPageBitmap(
+        pageIndex: Int,
+        isThumbnail: Boolean = false,
+        size: SizeF = pdfFile?.getPageSize(pageIndex) ?: SizeF(
+            0f,
+            0f
+        )
+    ){
         if (pdfFile == null) {
             return
         }
@@ -1036,7 +1043,7 @@ class PDFView(
 
         // Cancel all current tasks
 //        renderingHandler?.removeMessages(RenderingHandler.MSG_RENDER_PAGE_TASK)
-        pagesLoader.renderPage(page = pageIndex, isThumbnail = isThumbnail)
+        pagesLoader.renderPage(page = pageIndex, isThumbnail = isThumbnail, size = size)
         redraw()
     }
 
@@ -1540,8 +1547,8 @@ class PDFView(
     /**
      * Use a file as the pdf source
      */
-    fun fromFile(file: File?): Configurator {
-        return Configurator(FileSource(file!!))
+    fun fromFile(file: File): Configurator {
+        return Configurator(FileSource(file))
     }
 
     /**

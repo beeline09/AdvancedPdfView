@@ -22,7 +22,7 @@ package com.github.barteksc.pdfviewer.listener
  * Implements this interface to receive events from PDFView
  * when a page has changed through swipe
  */
-interface OnPageChangeListener {
+fun interface OnPageChangeListener {
     /**
      * Called when the user use swipe to change page
      *

@@ -12,6 +12,7 @@ classes/
 
 # Local configuration file (sdk path, etc)
 local.properties
+github.properties
 
 # Android Studio
 .idea/

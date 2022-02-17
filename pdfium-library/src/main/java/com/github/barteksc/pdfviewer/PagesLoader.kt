@@ -467,15 +467,15 @@ internal class PagesLoader(private val pdfView: PDFView) {
 
     fun renderPage(
         page: Int,
-        isThumbnail: Boolean = true
-    ) {
-        val ratio = if (isThumbnail) Constants.THUMBNAIL_RATIO else 1.0f
-        val pageSize = pdfView.pdfFile?.getPageSize(page) ?: SizeF(
+        isThumbnail: Boolean = true,
+        size: SizeF = pdfView.pdfFile?.getPageSize(page) ?: SizeF(
             0f,
             0f
         )
-        val width = pageSize.width * ratio
-        val height = pageSize.height * ratio
+    ) {
+        val ratio = if (isThumbnail) Constants.THUMBNAIL_RATIO else 1.0f
+        val width = size.width * ratio
+        val height = size.height * ratio
 
         pdfView.renderingHandler?.addPageRenderingTask(
             page = page,
